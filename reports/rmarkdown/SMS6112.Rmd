@@ -1,0 +1,493 @@
+
+---
+title: "NBIS Report: SMS_6112_Healthy_aging_in_Myotis_brandtii"
+subtitle: '`r format(Sys.Date(),format="%d-%b-%Y")`'
+output:
+  #pdf_document: default
+  #html_document:
+  rmarkdown::html_document:
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+      print: false
+    toc_depth: 4
+    number_sections: true
+    highlight: tango
+    df_print: paged
+    code_folding: "show"
+    self_contained: true
+    keep_md: false
+    encoding: 'UTF-8'
+    #css: "assets/report.css"
+---
+<!-- ----------------------- Do not edit above this ----------------------- -->
+
+```{r,echo=FALSE,include=FALSE}
+# CUSTOM VARIABLES
+
+# custom ggplot theme
+theme_report_h <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid.minor=element_blank(),
+      panel.grid.major.x=element_blank(),
+      legend.position="top",
+      legend.direction="horizontal",
+      legend.justification="center",
+      strip.background=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.ticks.x=element_line(colour=colour),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_report <- theme_report_v <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid.minor=element_blank(),
+      panel.grid.major.x=element_blank(),
+      legend.position="right",
+      legend.direction="vertical",
+      legend.justification="center",
+      strip.background=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.ticks.x=element_line(colour=colour),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_simple_h <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid=element_blank(),
+      legend.justification="center",
+      legend.position="top",
+      legend.direction="horizontal",
+      strip.background=element_blank(),
+      axis.ticks=element_blank(),
+      axis.text=element_blank(),
+      axis.title=element_blank(),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_simple_v <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid=element_blank(),
+      legend.justification="center",
+      legend.position="right",
+      legend.direction="vertical",
+      strip.background=element_blank(),
+      axis.ticks=element_blank(),
+      axis.text=element_blank(),
+      axis.title=element_blank(),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+#colours
+col_sll_green <- "#95C11E"
+col_sll_blue <- "#0093BD"
+col_sll_orange <- "#EF7C00"
+col_sll_green_light <- "#f4f8e8"
+col_sll_blue_light <- "#e5f4f8"
+col_sll_orange_light <- "#fdf1e5"
+
+# project variables
+rep_nbis_id <- "SMS-6112"
+rep_report_version <- "0.7"
+rep_request <- "Mattias Westman"
+rep_request_email <- "mattias.westman@ki.se"
+rep_pi <- "Carl-Johan Sundberg"
+rep_pi_email <- "carl.j.sundberg@ki.se"
+rep_org <- "KI"
+rep_nbis <- "Juliana Assis"
+rep_nbis_email <- "juliana.assis@nbis.se"
+```
+
+
+::: boxy
+__NBIS ID:__ `r rep_nbis_id`   
+__Report Version:__ `r rep_report_version`  
+__Request by:__ `r paste0(rep_request," (",rep_request_email,")")`  
+__Principal Investigator:__ `r paste0(rep_pi," (",rep_pi_email,")")`   
+__Organisation:__ `r rep_org`  
+__NBIS Staff:__ `r paste0(rep_nbis," (",rep_nbis_email,")")`  
+:::
+
+```{r message=FALSE, warning=FALSE, echo = F}
+## Paths
+path <- '/Users/juliana/Documents/NBIS/Projects/6112/4_qualimap/quant_6112/'
+## LIBRARIES
+library("devtools")
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("DECIPHER")
+library("gplots")
+library("gridExtra")
+library("grid")
+library("ggpubr")
+library("reshape2")
+library("reshape")
+library("ggrepel")
+library("ggh4x")
+library("RColorBrewer")
+library("tidyverse")
+library("DESeq2") # Bioconductor
+library('ggfortify')
+library("AnnotationDbi")
+library("EnsDb.Hsapiens.v86")
+library("FactoMineR")
+library("factoextra")
+library("PCAtools")
+library("Rqc")
+library("gt")
+library("clusterProfiler")
+library("rnaseqGene")
+```
+
+
+```{r message=FALSE, warning=FALSE, echo = F, include=FALSE}
+library(DT)
+library(Hmisc)
+#library(bsselectR)
+library(captioner)
+library(corrplot)
+library(dplyr)
+library(edgeR)
+#library(ggnewscale)
+library(ggplot2)
+#library(ggridges)
+#library(ggupset)
+library(gplots)
+library(kableExtra)
+library(knitr)
+library(reshape2)
+library(stringr)
+library(devtools)
+library(data.table)
+library(GenomicFeatures)
+library(tximport)
+library(DESeq2)
+library(apeglm)
+library(ggplot2)
+library(ggrepel)
+library(EnhancedVolcano)
+```
+
+
+## Methods
+
+### Data  
+There are 5 samples 
+* Type of data 
+5 Samples: bulk RNASeq
+
+* Data location
+cd /proj/snic2022-22-672
+
+* Uppmax project ID
+
+SNIC 2022/23-355		SNIC Small Storage	
+SNIC 2022/22-672	    SNIC Small Compute
+
+* Reference data used
+NCBI Myotis brandtii Annotation Release 101
+
+# Tools
+nfcore-rnaseq
+Trinity
+
+
+
+```{r message=FALSE, warning=FALSE, echo = F}
+data <- read.table("/Users/juliana/Documents/NBIS/Projects/6112/4_qualimap/R/metadata.tsv", header=T, row.names=1, check.names=T, sep="\t")
+
+head(data)
+```
+
+
+```{r message=FALSE, warning=FALSE, echo = F, include=FALSE}
+data$bat = as.factor(data$bat)
+data$organ = as.factor(data$organ)
+
+#sampleData$paris_classification = relevel(sampleData$paris_classification, ref = "normal")
+
+#Load expression data
+#Salmon
+files = file.path(paste0(path), list.files(paste0(path)))
+#files = file.path(paste0(path), list.files(paste0(path)), "_quant.sf")
+
+names(files) = list.files(paste0(path))
+
+```
+
+```{r message=FALSE, warning=FALSE, echo = F, include=FALSE}
+library(tximportData)
+
+txi <- tximport(files, type="salmon", txOut=TRUE)
+rownames(data) <- colnames(txi$counts) 
+
+dds <- DESeqDataSetFromTximport(txi, data, ~organ)
+```
+
+
+```{r pca, fig.cap="PCA plot of the first 2 principal components. Calculated using the 500 most variable genes.", fig.width=12, fig.height=6, message=FALSE, warning=FALSE, fig.path='PCA/', dev=c('png', 'pdf')}
+# PCA
+
+#head(assay(exp, "counts"))
+shapiro.test(as.numeric(assay(dds[1,])))
+ggpubr::ggqqplot(as.numeric(assay(dds[1,])))
+
+data_norm <- vst(assay(dds))
+#dds <- DESeq(dds)
+var_genes <- apply(data_norm, 1, var)
+
+# Get the gene names for the top 500 most variable genes
+select_var <- names(sort(var_genes, decreasing=TRUE))[1:500]
+data_norm_var <- data_norm[select_var,]
+
+# perform PCA
+res.pca <- PCA(t(data_norm_var), scale.unit = FALSE, graph = FALSE)
+# visualize
+a <- fviz_pca_ind(res.pca)
+cowplot::plot_grid(a)
+```
+
+By coloring the samples according to their phenotype (organ in this case), the structure underlying the data in the PCA plot can become more clear. From Figure \@ref(fig:organ), it is clear the major phenotype driving the separation along PC1 is the group(organ) of the samples. To visually show the correlation of these genes with the PCs, a biplot is shown as well. In the biplot, these 20 most important genes are overlayed as arrows on the PCA plot. From the position and length of these arrows, one can assess the strength and contribution of specific genes to the principal components.  The arrow point in the same direction as the PC1 axis so the correlation is positive. This means that samples with higher PC1 values have higher expression. 
+
+
+```{r groups, fig.width=12, fig.height=12, message=FALSE, warning=FALSE, fig.cap="group is distributed along PC1. (A) PCA plot with samples coloured according to groups (B) Top 20 genes contributing to PC1. (C) Biplot showing the correlations among the top 20 genes and the PCs."}
+b <- fviz_pca_ind(res.pca, 
+                repel = TRUE,
+                habillage =factor(colData(dds)[,"organ"]),
+                invisible="quali")
+#ggsave("./PCA/groupPCA.pdf", b)
+c <- fviz_contrib(res.pca, choice = "var", axes = 1, top = 20)
+#ggsave("./PCA/Barplot_Top20_PC1.pdf", c)
+e <- fviz_pca_biplot(res.pca, 
+                repel = TRUE,
+                select.var =list(name = rownames(head(res.pca$var$contrib[order(res.pca$var$contrib[,1], decreasing = TRUE),], 20))),
+                invisible="quali")
+#ggsave("./PCA/Biplot_Top20_PC1.pdf", e)
+bottom_row <- cowplot::plot_grid(c,e, labels = c("B", "C"))
+cowplot::plot_grid(b,bottom_row, labels = c("A", ""), ncol = 1)
+```
+
+The explanation of the variation along PC2
+
+These type of PC analyses are not a real alternative for a proper statistically supported differential expression analysis, but gives an idea of the structure in the data. What drives the biggest differences among the samples? 
+
+
+
+```{r}
+library(rafalib)
+#PC <-  prcomp( t( Znorm[ top_var, ]) ) #Method1
+
+leading_genes <- res.pca$ind$contrib
+#res.pca$ind$contrib
+head(leading_genes)
+
+leading_PC1 <- sort(leading_genes[,1],decreasing=T)
+leading_PC2 <- sort(leading_genes[,2],decreasing=T)
+
+{
+  mypar(1,2,mar=c(3,4,2,2))
+  barplot(leading_PC1[15:1],las=2,horiz=T,cex.names=.8,cex.axis=0.8,yaxs="i")
+  abline(v=0,lwd=2)
+  barplot(leading_PC2[15:1],las=2,horiz=T,cex.names=.8,cex.axis=0.8,yaxs="i")
+  abline(v=0,lwd=2)
+}
+```
+
+
+```{r}
+d <- DESeq2::estimateSizeFactors(dds,type="ratio")
+
+d <- DESeq2::estimateDispersions(d)
+plotDispEsts(d)
+
+
+```
+
+```{r}
+library("pheatmap")
+vsd <- vst(dds, blind=FALSE)
+rld <- rlog(dds, blind=FALSE)
+head(assay(vsd), 3)
+
+# this gives log2(n + 1)
+ntd <- normTransform(dds)
+library("vsn")
+meanSdPlot(assay(ntd))
+
+meanSdPlot(assay(vsd))
+
+meanSdPlot(assay(rld))
+
+#####
+nm <- assays(dds)[["avgTxLength"]]
+#sf <- estimateSizeFactorsForMatrix(counts(dds), normMatrix=nm)
+
+
+diagdds = dds
+# calculate geometric means prior to estimate size factors
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+geoMeans = apply(counts(diagdds), 1, gm_mean)
+diagdds = estimateSizeFactors(diagdds, geoMeans = geoMeans)
+diagdds = DESeq(diagdds, fitType="local")
+
+#
+resultsNames(diagdds) # lists the coefficients
+
+
+
+ddsCustom <- diagdds
+useForMedian <- mcols(ddsCustom)$dispGeneEst > 1e-7
+medianDisp <- median(mcols(ddsCustom)$dispGeneEst[useForMedian],
+                     na.rm=TRUE)
+dispersionFunction(ddsCustom) <- function(mu) medianDisp
+ddsCustom <- estimateDispersionsMAP(ddsCustom)
+
+###
+
+select <- order(rowMeans(counts(diagdds,normalized=TRUE)),
+                decreasing=TRUE)[1:20]
+
+df <- as.data.frame(colData(diagdds)[,c("bat","organ")])
+
+pheatmap(assay(ntd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df)
+```
+
+
+```{r}
+pheatmap(assay(vsd)[select,], cluster_rows=FALSE, show_rownames=FALSE, cluster_cols=FALSE, annotation_col=df)
+
+```
+
+```{r}
+pheatmap(assay(rld)[select,], cluster_rows=FALSE, show_rownames=FALSE, cluster_cols=FALSE, annotation_col=df)
+
+```
+
+```{r}
+sampleDists <- dist(t(assay(vsd)))
+library("RColorBrewer")
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(vsd$condition, vsd$type, sep="-")
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         col=colors)
+
+```
+
+
+
+```{r}
+plotPCA(vsd, intgroup=c("organ", "bat"))
+
+```
+
+
+```{r}
+topVarGenes <- head(order(rowVars(assay(rld)), decreasing = TRUE), 20)
+mat  <- assay(rld)[ topVarGenes, ]
+mat  <- mat - rowMeans(mat)
+anno <- as.data.frame(colData(rld)[c("organ")])
+pheatmap(mat, annotation_col = anno)
+```
+
+
+
+# Summary
+
+Short summary of the work. 
+
+# Further Work  
+
+Further steps to be taken (if needed).
+
+# References
+
+Relevant references for methods, tools etc.
+
+# Deliverables  
+
+Files delivered to the user with descriptions.
+
+## Directory  
+
+```sh
+/data/processed/b/
+
+8 directories, 18 files
+```
+
+Total size is XX GB.
+
+# Timeline
+
+# Practical Info  
+## Data responsibility
+
+The responsibility for data archiving lies with the PI of the project. We do not offer long-term storage or retrieval of data.
+
++ __NBIS & Uppnex: __ We kindly ask that you remove the files from UPPMAX/UPPNEX. The main storage at UPPNEX is optimized for high-speed and parallel access, which makes it expensive and not the right place for longer time archiving. Please consider others by not taking up the expensive space. Please note that UPPMAX is a resource separate from the Bioinformatics Platform, administered by the Swedish National Infrastructure for Computing (SNIC) and SNIC-specifc project rules apply to all projects hosted at UPPMAX.   
++ __Sensitive data :__ Please note that special considerations may apply to the human-derived legally considered sensitive personal data. These should be handled according to specific laws and regulations as outlined e.g. [here](http://nbis.se/support/human-data.html).  
++ __Long-term backup :__ We recommend asking your local IT for support with long-term data archiving. Also a newly established [Data Office](https://www.scilifelab.se/data/) at SciLifeLab may be of help to discuss other options.  
+
+## Acknowledgments
+
+If you are presenting the results in a paper, at a workshop or conference, we kindly ask you to acknowledge us.
+
++ __NBIS staff__ are encouraged to be co-authors when this is merited in accordance to the ethical recommendations for authorship, e.g. [ICMJE recommendations](http://www.icmje.org/recommendations/browse/roles-and-responsibilities/defining-the-role-of-authors-and-contributors.html). If applicable, please include __Juliana, Assis Geraldo, National Bioinformatics Infrastructure Sweden, Science for Life Laboratory, NBIS__, as co-author. In other cases, NBIS would be grateful if support by us is acknowledged in publications according to this example:
+
+> "Support by NBIS (National Bioinformatics Infrastructure Sweden) is gratefully acknowledged."
+
++ __UPPMAX__ kindly asks you to [acknowledge UPPMAX and SNIC](https://www.uppmax.uu.se/support/faq/general-miscellaneous-faq/acknowledging-uppmax--snic--and-uppnex/). If applicable, please add:
+
+> "The computations were performed on resources provided by SNIC through Uppsala Multidisciplinary Center for Advanced Computational Science (UPPMAX) under Project SNIC 2022-22-352."
+
++ __NGI :__ For publications based on data from NGI Sweden, NGI, SciLifeLab and UPPMAX should be [acknowledged](https://ngisweden.scilifelab.se/info/faq#how-do-i-acknowledge-ngi-in-my-publication) like so:  
+
+> "The authors would like to acknowledge support from Science for Life Laboratory (SciLifeLab), the National Genomics Infrastructure (NGI), and Uppsala Multidisciplinary Center for Advanced Computational Science (UPPMAX) for providing assistance in massive parallel sequencing and computational infrastructure."
+
+# Support Completion  
+
+You should soon be contacted by one of our managers with a request to close down the project in our internal system and for invoicing matters. If we do not hear from you within 30 days the project will be automatically closed and invoice sent. Again, we would like to remind you about data responsibility and acknowledgements, see sections: **Data Responsibility** and **Acknowledgments**.
+
+You are welcome to come back to us with further data analysis request at any time via http://nbis.se/support/support.html.
+
+Thank you for using NBIS.
+
+```{r,eval=FALSE,echo=FALSE}
+# manually run this to render this document to HTML
+rmarkdown::render("nbis-report.Rmd")
+# then run this to convert HTML to PDF (if needed)
+#pagedown::chrome_print("nbis-report.html",output="nbis-report.pdf")
+```
+
