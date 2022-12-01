@@ -1,0 +1,1020 @@
+---
+title: "NBIS Report"
+subtitle: '`r format(Sys.Date(),format="%d-%b-%Y")`'
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+      print: false
+    toc_depth: 4
+    number_sections: true
+    highlight: tango
+    df_print: paged
+    code_folding: "show"
+    self_contained: true
+    keep_md: false
+    encoding: 'UTF-8'
+    css: "assets/report.css"
+    staff_web: "https://nbis.se/about/staff/juliana-assis/"
+
+---
+
+```{r,child="assets/_header-lab.Rmd"}
+```
+
+<!-- ----------------------- Do not edit above this ----------------------- -->
+
+```{r,echo=FALSE,include=FALSE}
+# CUSTOM VARIABLES
+
+# custom ggplot theme
+theme_report_h <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid.minor=element_blank(),
+      panel.grid.major.x=element_blank(),
+      legend.position="top",
+      legend.direction="horizontal",
+      legend.justification="center",
+      strip.background=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.ticks.x=element_line(colour=colour),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_report <- theme_report_v <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid.minor=element_blank(),
+      panel.grid.major.x=element_blank(),
+      legend.position="right",
+      legend.direction="vertical",
+      legend.justification="center",
+      strip.background=element_blank(),
+      axis.ticks.y=element_blank(),
+      axis.ticks.x=element_line(colour=colour),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_simple_h <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid=element_blank(),
+      legend.justification="center",
+      legend.position="top",
+      legend.direction="horizontal",
+      strip.background=element_blank(),
+      axis.ticks=element_blank(),
+      axis.text=element_blank(),
+      axis.title=element_blank(),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+# custom ggplot theme
+theme_simple_v <- function (base_size=12,base_family=NULL,colour="grey60") {
+  theme_bw(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      panel.border=element_blank(),
+      panel.grid=element_blank(),
+      legend.justification="center",
+      legend.position="right",
+      legend.direction="vertical",
+      strip.background=element_blank(),
+      axis.ticks=element_blank(),
+      axis.text=element_blank(),
+      axis.title=element_blank(),
+      plot.caption=element_text(hjust=0,colour=colour,size=10),
+      plot.title=element_text(colour=colour),
+      plot.subtitle=element_text(colour=colour)
+    )
+}
+
+#colours
+col_sll_green <- "#95C11E"
+col_sll_blue <- "#0093BD"
+col_sll_orange <- "#EF7C00"
+col_sll_green_light <- "#f4f8e8"
+col_sll_blue_light <- "#e5f4f8"
+col_sll_orange_light <- "#fdf1e5"
+
+# project variables
+rep_nbis_id <- "SMS-6112"
+rep_report_version <- "1.0"
+rep_request <- "Mattias Westman"
+rep_request_email <- "mattias.westman@ki.se"
+rep_pi <- "Carl-Johan Sundberg"
+rep_pi_email <- "carl.j.sundberg@ki.se"
+rep_org <- "KI"
+rep_nbis <- "Juliana Assis"
+rep_nbis_email <- "juliana.assis@nbis.se"
+
+```
+
+<br>
+
+::: boxy
+__NBIS ID:__ `r rep_nbis_id`   
+__Report Version:__ `r rep_report_version`  
+__Request by:__ `r paste0(rep_request," (",rep_request_email,")")`  
+__Principal Investigator:__ `r paste0(rep_pi," (",rep_pi_email,")")`   
+__Organisation:__ `r rep_org`  
+__NBIS Staff:__ `r paste0(rep_nbis," (",rep_nbis_email,")")`  
+:::
+
+<br>
+
+# Setup
+
+```{r,echo=TRUE, warning=FALSE}
+source('https://raw.githubusercontent.com/nimarafati/RNA_Seq_Pipeline/master/RNA_Seq/DE_script.R')
+## Paths
+path <- '/Users/juliana/Documents/GitHub/SMS-6112-22-MB/'
+
+## LIBRARIES
+# data handling
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+# tables
+library(kableExtra) # complete table
+library(formattable) # table with conditional formatting
+library(DT) # interactive table
+
+# graphics
+library(ggplot2) # static graphics
+
+# interactive graphics
+library(highcharter)
+library(plotly)
+library(ggiraph) # convert ggplot to interactive
+library(dygraphs) # time series
+library(networkD3) # network graph
+library(leaflet) # interactive maps
+library(crosstalk) # linking plots
+
+# analysis
+library("devtools")
+library("bsselectR")
+library("dplyr")
+library("ggplot2")
+library("tidyr")
+library("DECIPHER")
+library("gplots")
+library("gridExtra")
+library("grid")
+library("ggpubr")
+library("reshape2")
+library("reshape")
+library("ggrepel")
+library("ggh4x")
+library("RColorBrewer")
+library("tidyverse")
+library("DESeq2") # Bioconductor
+library('ggfortify')
+library("AnnotationDbi")
+library("FactoMineR")
+library("factoextra")
+library("PCAtools")
+library("Rqc")
+library("gt")
+library("clusterProfiler")
+library("rnaseqGene")
+#library("refGenome")
+library("plotly")
+library("biomaRt")
+library("ggridges")
+library("viridis")
+library("hrbrthemes")
+
+## Functions
+#Perform DE analysis
+perform_DE <- function(dds, contrast_name, log2FC_cutoff, padjust_cutoff, file_name, volcano, genes, file_path){
+  res_obj <- results(dds, contrast = contrast_name, lfcThreshold = log2FC_cutoff, alpha = padjust_cutoff)
+  res <- res_obj
+  res$gene_id <- rownames(res_obj)
+  res <- inner_join(x = as.data.frame(res), y = genes, by = 'gene_id')  
+  res <- res[!is.na(res$padj),]
+  res$diffexpressed <- 'No' 
+  res$diffexpressed[(res$log2FoldChange >= log2FC_cutoff & res$padj <= 0.05)] <- 'Up-regulated'
+  res$diffexpressed[(res$log2FoldChange <= -log2FC_cutoff & res$padj <= 0.05)] <- 'Down-regulated'
+  res$delabel <- 'NA'
+  res[(res$diffexpressed != 'No'), 'delabel'] <- res[(res$diffexpressed != 'No'),'gene_name']
+  # Volcano
+  if(volcano == T){
+    png(paste0(file_path, file_name, '_volcano.png'), width = 3000, height = 2000, res = 300)
+    p <- ggplot(data= as.data.frame(res), aes(x = log2FoldChange, y = -log10(padj), col = diffexpressed, label = delabel)) + 
+    geom_point() + 
+    theme_classic() +
+    scale_colour_manual(values = c('blue', 'black', 'red')) +
+    geom_vline(xintercept = c(-log2FC_cutoff,log2FC_cutoff), col = 'red') +
+    geom_hline(yintercept = -log10(padjust_cutoff), col = 'red') +
+    ggtitle(file_name) +
+    theme(plot.title = element_text(hjust = 0.5))
+    print(p)
+    dev.off()
+
+    # ntd <- normTransform(dds)
+    # select <- res[(res$diffexpressed == 'Down-regulated'), 'gene_id']
+    # df <- as.data.frame(colData(dds)[,c('Cell_group', 'Abeta', 'Sex')]) 
+    # pheatmap(assay(ntd)[select,], 
+    #          cluster_rows = F,
+    #          cluster_cols = T,
+    #          show_rownames = F,
+    #          annotation_col = df)
+  }
+  write.table(res, paste0(file_path, 'DE_results.txt'), col.names = T, row.names = F, sep = '\t', quote = F)
+  res_results <- list(DE_table = res,
+                      Volcanot_plot = p,
+                      res_obj = res_obj)
+  saveRDS(res_results, paste0(file_path, 'res_results.rds'))
+  return(res_results)
+}
+
+# Plot PC3, PC4
+plotPCA_PCs <- function (object, ...) 
+{
+    .local <- function (object, intgroup = "condition", ntop = 500, 
+        returnData = FALSE) 
+    {
+        rv <- rowVars(assay(object))
+        select <- order(rv, decreasing = TRUE)[seq_len(min(ntop, 
+            length(rv)))]
+        pca <- prcomp(t(assay(object)[select, ]))
+        percentVar <- pca$sdev^2/sum(pca$sdev^2)
+        if (!all(intgroup %in% names(colData(object)))) {
+            stop("the argument 'intgroup' should specify columns of colData(dds)")
+        }
+        intgroup.df <- as.data.frame(colData(object)[, intgroup, 
+            drop = FALSE])
+        group <- if (length(intgroup) > 1) {
+            factor(apply(intgroup.df, 1, paste, collapse = ":"))
+        }
+        else {
+            colData(object)[[intgroup]]
+        }
+        d <- data.frame(PC1 = pca$x[, PC1], PC2 = pca$x[, PC2], group = group, 
+            intgroup.df, name = colnames(object))
+        if (returnData) {
+            attr(d, "percentVar") <- percentVar[1:length(percentVar)]
+            return(d)
+        }
+            geom_point(size = 3) + xlab(paste0(PC1, ": ", round(percentVar[PC1] * 
+            100), "% variance")) + ylab(paste0(PC2, ": ", round(percentVar[PC2] * 
+            100), "% variance")) + coord_fixed()
+    }
+    .local(object, ...)
+}
+
+
+ridgeline_plot <- function(ego_result, plot_name, fc_sorted){
+  t <- ego_result
+  t <- t %>% mutate(geneID = strsplit(as.character(geneID), '/')) %>% unnest(geneID) %>% filter(geneID != '') %>% dplyr::select(geneID, c('ONTOLOGY', 'Description', 'geneID'))
+  t <- data.frame(t, logFC = fc_sorted[t$geneID])
+  
+  for(ont in unique(t$ONTOLOGY)){
+    png(paste0(plot_name, '_', ont, '.png'), res = 200, height = 2000, width = 2000)
+    p <- ggplot(t[(t$ONTOLOGY == ont),], aes(x = logFC, y = Description, fill = ..x..)) +
+    geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+    scale_fill_viridis(name = "logFC", option = "C") +
+    labs(title = paste0('logFC distribution of genes in enriched GO terms (', ont, ')')) +
+    theme_ipsum() +
+      theme(
+        legend.position="none",
+        panel.spacing = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 8)
+      )
+    print(p)
+    dev.off()
+  }
+}
+
+
+## Enrichment analysis
+### GO  
+run_ego <- function(DEG_entrez_id, OrgDb, ont, all_entrez_id, min_gene_Size, max_gene_Size, path_to_write) {
+    setwd(path_to_write)
+    ego <- clusterProfiler::enrichGO(DEG$entrezgene_id, 
+                                     OrgDb = org_db, 
+                                     ont = ontology_group, 
+                                     universe = all_entrez_id, 
+                                     minGSSize = min_gene_Size, 
+                                     maxGSSize = max_gene_Size)
+
+      if(nrow(ego) > 0 && !is.null(ego)){
+        write.table(ego , 'enrichGO_results.txt', col.names = T, row.names = F, quote = F, sep = '\t')
+        p_ego<- clusterProfiler::dotplot(ego, split="ONTOLOGY", font.size = 8, showCategory = nrow(ego), title = 'GO enrichment analysis') + facet_grid(ONTOLOGY~., scale="free") + theme(plot.title = element_text(hjust = 0.5))
+        ## ridgeline plot
+        ridgeline_plot(ego_result = ego@result, plot_name = 'ridgeline_FDR_0.05', fc_sorted = fc_sorted)
+      }else{
+        write.table('No GO enrichment result' , 'enrichGO_results.txt', col.names = T, row.names = F, quote = F, sep = '\t')
+        p_ego <- ggplot() + theme_void() + ggtitle('No significant term/category/pathway')
+      }
+      print(p_ego)
+      dev.off()
+    return(ego)  
+  }
+#### GSEGO
+run_gsego <- function (fc_sorted, OrgDb, ontology_group, keyType, min_gene_Size, max_gene_Size, pvalueCutoff,  path_to_write){
+    setwd(path_to_write)
+    gsego <- clusterProfiler::gseGO(geneList=fc_sorted, 
+             ont = ontology_group, 
+             keyType = keyType, 
+             minGSSize = min_gene_Size, 
+             maxGSSize = max_gene_Size, 
+             pvalueCutoff = pvalueCutoff, 
+             pAdjustMethod = 'BH',
+             verbose = TRUE, 
+             OrgDb = org_db)
+    
+    if(!is.null(nrow(gsego)) && nrow(gsego) > 0 ){
+        write.table(gsego , 'GSEA_GO_FDR_0.05.txt', col.names = T, row.names = F, quote = F, sep = '\t')
+        
+        ## dotplot
+        png('dotplot_GSEA_GO_FDR_0.05.png', res = 200, height = 2000, width = 2000)
+        p_gsego_dotplot <- clusterProfiler::dotplot(gsego, showCategory=nrow(gsego), split=".sign", font.size = 8, title = 'Gene set enrichment analysis of GO terms' ) + facet_grid(.~.sign) + theme(plot.title = element_text(hjust = 0.5))
+        print(p_gsego_dotplot)
+        dev.off()
+        
+        ## Gene set enrichment plot for each significant term
+        cntr <- 1
+        for(go_id in as.character(gsego@result$ID)){
+          cat('\r', paste0('visualising ',go_id,' GO'))
+          Description <- gsub( x = gsub(pattern = '/', '_', perl = T,gsego$Description[cntr]), replacement = "_", pattern = ' ')
+          png(paste0('GSEA_GO_FDR_0.05_', Description, '.png'), res = 200, height = 2000, width = 2000)
+          p_gsego_gse <- clusterProfiler::gseaplot(gsego, by = ontology_group, title = gsego$Description[cntr], geneSetID = cntr)
+          print(p_gsego_gse)
+          dev.off()
+          cntr <- cntr + 1
+        }
+      }else{
+        write.table('No GSEA GO result', 'GSEA_GO_FDR_0.05.txt', col.names = F, row.names = F, quote = F, sep = '\t')
+        
+        png('dotplot_GSEA_GO_FDR_0.05.png', res = 200, height = 2000, width = 2000)
+        p_gsego_dotplot <-  ggplot() + theme_void() + ggtitle('No significant term/category/pathway')
+        print(p_gsego_dotplot)
+        dev.off()
+      }
+    return(gsego)
+  }
+
+### KEGG  
+run_ekegg <- function (fc_sorted, organism, keyType, all_entrez_id, minGSSize, pvalueCutoff, path_to_write){
+  setwd(path_to_write)
+    ekegg <- clusterProfiler::enrichKEGG(names(fc_sorted), organism = organism, keyType = keyType, pvalueCutoff = pvalueCutoff, pAdjustMethod = "BH", universe = as.character(all_entrez_id), maxGSSize = 1000, minGSSize = 10)
+    ekegg@result$ratio <- sapply(strsplit(ekegg@result$GeneRatio, "/"), function(x) as.numeric(x[1])/as.numeric(x[2]))
+  if(!is.null(nrow(ekegg)) && nrow(ekegg) > 0 ){
+    write.table(ekegg , 'enrichKEGG_results.txt', col.names = T, row.names = F, quote = F, sep = '\t')
+    ekegg_FDR_0.05 <- ekegg
+    ekegg_FDR_0.05@result <- ekegg@result[(ekegg@result$p.adjust <= 0.05), ]
+    
+    png('dotplot_KEGG_Enrichment_FDR_0.05.png', res = 200, height = 2000, width = 2000)
+  
+    p_ekegg <- clusterProfiler::dotplot(ekegg_FDR_0.05, font.size = 8, showCategory = nrow(ekegg_FDR_0.05), title = 'KEGG enrichment analysis') + theme(plot.title = element_text(hjust = 0.5)) 
+    print(p_ekegg)
+    dev.off()
+  }else{
+    write.table('No KEGG enrichment result' , 'enrichKEGG_results.txt', col.names = F, row.names = F, quote = F, sep = '\t')
+    png('dotplot_KEGG_Enrichment_FDR_0.05.png', res = 200, height = 2000, width = 2000)
+    p_gsego_dotplot <-  ggplot() + theme_void() + ggtitle('No significant term/category/pathway')
+    print(p_gsego_dotplot)
+    dev.off()
+    
+    p_ekegg <- ggplot() + theme_void() + ggtitle('No significant term/category/pathway')
+    print(p_ekegg)
+    dev.off()
+    return(ekegg)
+  }
+}
+
+#### GSEA_KEGG
+run_gsekegg <- function(fc_sorted, organism, keyType, eps = 0, minGSSize, pvalueCutoff, path_to_write){
+    setwd(path_to_write)
+    gsekegg <- clusterProfiler::gseKEGG(fc_sorted, organism = org, keyType = gene_type_conversion, pvalueCutoff = pvalueCutoff, eps = eps, minGSSize = min_gene_Size, maxGSSize = max_gene_Size, pAdjustMethod = "BH", nPermSimple = 10000)
+   if( !is.null(nrow(gsekegg)) && nrow(gsekegg) > 0){
+    gsekegg_FDR_0.05 <- gsekegg
+    gsekegg_FDR_0.05@result <- gsekegg@result[(gsekegg@result$p.adjust <= 0.05), ]
+    write.table(gsekegg_FDR_0.05 , 'GSEA_KEGG_FDR_0.05.txt', col.names = T, row.names = F, quote = F, sep = '\t')
+    png('dotplot_GSEA_KEGG_FDR_0.05.png', res = 200, height = 2000, width = 2000)
+    p_gsekegg_dotplot <- clusterProfiler::dotplot(gsekegg_FDR_0.05, showCategory = 10, title = "Enriched Pathways" , split=".sign") + facet_grid(.~.sign) + theme(plot.title = element_text(hjust = 0.5))
+    print(p_gsekegg_dotplot)
+    dev.off()
+  }else{
+    write.table('NO GSEA KEGG result' , 'GSEA_KEGG_FDR_0.05.txt', col.names = F, row.names = F, quote = F, sep = '\t')
+    png('dotplot_GSEA_KEGG_FDR_0.05.png', res = 200, height = 2000, width = 2000)
+    p_gsekegg_dotplot <- ggplot() + theme_void() + ggtitle('No significant term/category/pathway')
+    print(p_gsekegg_dotplot)
+    dev.off()
+  }
+}
+
+#### pathview
+run_pathview <- function(gsekegg_FDR_0.05, fc_sorted, org, path_to_write){
+  setwd(path_to_write)
+  if(!is.null(nrow(gsekegg_FDR_0.05)) && nrow(gsekegg_FDR_0.05) >0 ){
+    cntr <- 1
+    for(ptw in as.character(gsekegg_FDR_0.05@result$ID)){
+      cat('\r', paste0('Saving ',ptw,' pathway'))
+      Description <- gsub( x = gsub(pattern = '/', '_', perl = T,gsekegg_FDR_0.05$Description[cntr]), replacement = "_", pattern = ' ')
+      pathview(gene.data=fc_sorted, pathway.id=ptw, species = org, same.layer = 2)
+      png(paste0('GSEA_KEGG_FDR_0.05_', Description, '.png'), res = 200, height = 2000, width = 2000)
+      p <- gseaplot(gsekegg_FDR_0.05, by = "all", title = gsekegg_FDR_0.05$Description[cntr], geneSetID = cntr)
+      print(p)
+      dev.off()
+      cntr <- cntr + 1
+    }
+  }else{
+    png(paste0('GSEA_KEGG_FDR_0.05.png'), res = 200, height = 2000, width = 2000)
+    p <- ggplot() + theme_void() + ggtitle('No significant term/category/pathway')
+    print(p)
+    dev.off()
+  }
+}
+
+
+```
+
+
+```{r Report variables, echo = FALSE}
+affil <- paste("National Bioinformatics Infrastructure Sweden, Science for",
+    "Life Laboratory, Stockholm University")
+link_support <- "http://nbis.se/support/support.html"
+link_uppmax <- paste("http://uppmax.uu.se/support-sv/faq/general-",
+    "miscellaneous-faq/acknowledging-uppmax--snic--and-uppnex")
+link_authorship <- "http://www.icmje.org/recommendations/"
+link_agreement <- "http://nbis.se/assets/doc/nbis-support-useragreement.pdf"
+link_acknowledge <- paste("https://ngisweden.scilifelab.se/info/faq#how-do",
+                          "-i-acknowledge-ngi-in-my-publication")
+link_sensitive_data <- "https://nbis.se/support/human-data.html"
+```
+
+# Background
+
+Myotis brandtii are known to have at least a ten-fold longer life
+expectancy compared to mice of similar body mass, and the highest
+relative longevity of any mammals. To this end we have collected fresh
+snap-frozen complete organ systems from these bats during both winter
+hibernation and summer active period. We thus want to compare gene
+expressions and control of gene expressions across organs and between
+these groups. The whole genome is sequenced and available, but the
+pipeline from sequences to count tables is not established. 
+
+The list of contrasts of interest is:  
+
+**genes based on the row-wise variance (no statistical support) **\
+
+> -Variant between Summer vs Winter (Bat1 vs Bat2)  
+> -Variant between Organs and S/W \
+>>  --Intestine-S & Intestine-W,   
+  --Kidney-S &  Kidney-W, 
+  --Skeletal_muscle-S & Skeletal_muscle-W   
+
+## Data   
+There are 12 samples  
+
+* Type of data  
+bulk RNASeq 
+
+* Data location \
+
+cd /proj/snic2022-22-672/private/SMS_6112_RNASeq_Bat/ 
+
+* Uppmax project ID  
+
+SNIC 2022/23-355		SNIC Small Storage 	
+SNIC 2022/22-672	    SNIC Small Compute 
+
+* Reference data used 
+
+**NCBI Myotis brandtii Annotation Release 101**
+
+Partial genome with low quality annotation
+
+# Tools 
+nfcore-rnaseq
+
+Trinity not shown 
+
+## Methods
+
+
+Reads were aligned to  to the Myotis brandtii Annotation Release 101 genome by using nf-core/rnaseq pipeline (3.8) in **Reproducibility** section you can find all the tools with version used in nf-core pipeline. For downstream analyses we used expression values generated by. 
+
+
+In following table you can find list of samples and metadata.  
+
+```{r loading-samples-info, echo = F, eval = T, width = "100%", message=FALSE}
+samples_info <- read.table(paste0(path, "data/sample_data.tsv"), header=T, check.names=T, sep="\t")
+samples_info$organ_library <- paste0(samples_info$organ, '_', samples_info$library)
+samples_info$organ_library_bat <- factor(paste0(samples_info$organ, '_', samples_info$library, '_', samples_info$bat))
+samples_info$organ_bat <- paste0(samples_info$organ, '_', samples_info$bat, '_')
+samples_info$organ <- paste0('organ_', samples_info$organ)
+#samples_info$organ <- relevel(factor(samples_info$organ), 'organ1')
+#samples_info$bat <- relevel(factor(samples_info$Sex), 'Males')
+#samples_info$Abeta <- gsub(x = samples_info$Group, pattern = '.*_', '')
+#samples_info$Abeta <- relevel(factor(samples_info$Abeta), 'Empty')
+#samples_info$Cell_group <- as.factor(samples_info$Cell_group)
+#samples_info$Cell_group <- relevel(samples_info$Cell_group, 'Neuron')
+
+DT::datatable(data = samples_info, rownames = FALSE, 
+              extensions = c('Buttons', 'Scroller'), 
+              options = list(dom = 'Bfrtip', buttons = c('copy', 'csv'),
+                             deferRender = TRUE, scrollX = T,
+                             scrollX = T,
+                             scrollY = 200,
+                             scroller = TRUE,
+                             caption = 'Sample metadata'))
+
+```
+
+## Loading annotation  
+
+```{r loading-annotation, eval = F, echo = T, warning=FALSE}
+library("GenomicFeatures")
+library("ensembldb")
+gtf2 <- rtracklayer::import("/Users/juliana/Documents/GitHub/SMS-6112-22-MB/data/GCF_000412655.1_ASM41265v1_genomic.gtf")
+
+TxDb <- makeTxDbFromGFF("/Users/juliana/Documents/GitHub/SMS-6112-22-MB/data/GCF_000412655.1_ASM41265v1_genomic.gtf")
+
+#head(seqlevels(TxDb))
+#keytypes(TxDb)
+#keys(TxDb)
+# 
+# gtf <- ensemblGenome()
+# setwd(paste0(path, 'results/01-RNA-Results/genome/'))
+# read.gtf(gtf, 'genome_genes.gtf')
+# genes <- gtf@ev$gtf[, c('gene_id', 'gene_name')]
+# genes <- genes[!duplicated(genes$gene_id),]
+# write.table(genes, paste0(path, 'data/meta_data/annotation/gene_id_gene_name.txt'), col.names = T, row.names = F, sep = '\t')
+
+# Convert to gene names
+mart <- useMart("ENSEMBL_MART_ENSEMBL")
+mart <- useDataset(mart=mart,dataset="mlucifugus_gene_ensembl")
+myattributes <- c("ensembl_gene_id",
+                  "entrezgene_id",
+                  "external_gene_name",
+                  "chromosome_name",
+                  "start_position",
+                  "end_position",
+                  "strand",
+                  "gene_biotype",
+                  "description")
+bdata <- getBM(mart=mart,attributes=myattributes,uniqueRows=T,
+               useCache=FALSE)
+# remove duplicated gene_ids
+annotation <- bdata[!duplicated(bdata$ensembl_gene_id),c('ensembl_gene_id', 'external_gene_name', 'entrezgene_id')]
+colnames(annotation) <- c('gene_id', 'Name', 'entrezgene_id')
+annotation[(annotation$Name == ''), 'Name'] <- 'Uncharacterised'
+write.table(annotation, paste0('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/annotation.txt'), col.names = T, row.names = F, sep = '\t')
+#ensDbFromAH
+```
+  
+## Loading the data   
+Here we load normalized counts scaled for length generated by salmon (version) [@] in nf-core/rnaseq pipeline.  We tested different model and dependent on the contrast we chose one of them for downstream analysis.  
+```{r pca, echo = T, eval = F, warning=FALSE}
+exp <- readRDS("/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/salmon.merged.gene_counts_length_scaled.rds")
+
+assay(exp, 1) <- round(data.matrix(assay(exp, 1)))
+assay(exp, 2) <- NULL
+
+# Add metadata
+# rownames(exp)
+# colnames(exp) 
+
+exp2 <- exp
+
+# Add metadata
+exp2$sample_id <- as.factor(samples_info$sample_id)
+exp2$bat <- as.factor(samples_info$bat)
+exp2$organ <- as.factor(samples_info$organ)
+exp2$library <- as.factor(samples_info$library)
+exp2$organ_bat <- as.factor(samples_info$organ_bat)
+
+counts <- assay(exp2, "counts")
+dds <- DESeqDataSetFromMatrix(countData = round(counts),
+                              colData = samples_info,
+                              design = ~ 0 + organ + bat)
+```
+
+## Distribution of expression  
+```{r dist-norm-expression, eval = F, echo = T}
+# counts_norm <- reshape2::melt(counts(dds, normalized = T), varnames = c('sample_id', 'bat'), value.name = 'expression')
+# counts_norm <- inner_join(x = counts_norm, y = as.data.frame(dds@colData), by = 'Sample')
+# png(paste0(path, 'results/02-DE/Normalized_expression_distribution.png'), width = 3000, height = 2500, res = 300)
+# ggplot(data = counts_norm, aes(x = reorder(Sample, Group, na.rm = T), y = log2(expression+1))) +  geom_boxplot(aes(fill = factor(counts_norm$Group))) + coord_flip() + xlab('Samples')
+# dev.off()
+```
+
+## Filtering  
+We filter out low-count genes before downstream analysis by using at least 20 reads in total (including all samples).  
+
+```{r filtering, eval = F, echo = T, warning=FALSE}
+keep <- rowSums(counts(dds)) >= 20
+dds <- dds[keep,]
+```
+
+## PCA  
+This high-dimensional count data can - after normalization - be visualized in two dimensions in a Principal Component Analysis (PCA). Using [PCA](http://setosa.io/ev/principal-component-analysis), we examine the structure of the data by projecting the samples on a two-dimensional graph using the two first principal components that explain the most variation between those samples. The plot can be used to examine the samples for outliers, sample swaps and other relationships. When normalization successfully removed technical artefacts, the relative distances should be biologically interpretable.
+
+
+
+```{r PCA, eval = F, echo = T, warning=FALSE}
+vsd <- vst(dds, blind = F)
+plotPCA(vsd, "library")
+assay(vsd) <- limma::removeBatchEffect(assay(vsd), vsd$library)
+plotPCA(vsd, "library")
+
+a <- plotPCA(vsd, intgroup = c('sample_id', 'bat', 'organ' ,'library','organ_bat'), returnData = TRUE)
+
+
+# By organ
+png(paste0(path, 'results/salmon/results/02-DE/PCA_bat_lremoved.png'), width = 4000, height = 3000, res = 300)
+b <- ggplot(a, aes(x = PC1, y = PC2, color = organ, shape = bat)) + 
+  geom_point(size = 4) +
+  theme_pubr(border = TRUE) +
+  geom_text_repel(aes(label = library), nudge_x = 0.06, size = 3.0, segment.alpha = 0.5)
+b
+dev.off()
+
+# By library
+png(paste0(path, 'results/salmon/results/02-DE/PCA_library_removed.png'), width = 4000, height = 3000, res = 300)
+c <- ggplot(a, aes(x = PC1, y = PC2, color = library, shape = organ)) + 
+  geom_point(size = 4) +
+  theme_pubr(border = TRUE) +
+  geom_text_repel(aes(label = bat), nudge_x = 0.06, size = 3.0, segment.alpha = 0.5) 
+c
+dev.off()
+#
+
+```
+
+
+```{r , eval = F, echo = T}
+#The rlog transform
+#https://bioc.ism.ac.jp/packages/2.14/bioc/vignettes/DESeq2/inst/doc/beginner.pdf
+#highly variable genes. These are the genes most variable across all samples regardless of which samples they are
+#rowVars on the output of vst as this corrects for the biased mean/variance trend and puts data on the log scale
+
+rld <- rlog(dds, blind=F )
+#head( assay(rld) )
+
+#Scatter plot of sample 2 vs sample 1
+# par( mfrow = c( 1, 2 ) )
+# plot( log2( 1+counts(dds, normalized=FALSE)[, 1:2] ), col="#00000020", pch=20, cex=0.3 )
+# plot( assay(rld)[, 1:2], col="#00000020", pch=20, cex=0.3 )
+
+
+# Heatmap of Euclidean sample distances after rlog transformation.
+sampleDists <- dist( t( assay(rld) ) )
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- paste( rld$sample_id, rld$organ, rld$bat , sep="-" )
+#colnames(sampleDistMatrix) <- NULL
+library( "gplots" )
+library( "RColorBrewer" )
+
+png(paste0(path, 'results/salmon/results/02-DE/HeatMap_rlog.png'), width = 4000, height = 3000, res = 300)
+colours = colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+d <- pheatmap(sampleDistMatrix, trace="none", col=colours)
+d
+dev.off()
+
+#Gene clustering
+topVarGenes <- head( order( rowVars( assay(rld) ), decreasing=TRUE ), 100 )
+
+df <- as.data.frame(colData(dds)[,c("bat","organ", "library")])
+df$bat = factor(df$bat, levels = c("Bat_1 ", "Bat_2 ","Bat")) #D46C4E
+metaR_bat <- c("#C0C0C0","#BC8F8F","black") #D46C4E #43978D F5DEB3
+names(metaR_bat) <- levels(df$bat)
+
+df$organ = factor(df$organ, levels = c("organ_Skeletal muscle", "organ_Intestine","organ_Kidney")) #D46C4E
+metaR_organ <- c("#77A515", "#264D59", "#43978D") #D46C4E #43978D
+names(metaR_organ) <- levels(df$organ)
+
+metaR_AnnColour <- list(
+  bat = metaR_bat)
+
+metaR_AnnColour2 <- list(
+  Ecotype = metaR_organ)
+
+metaR_AnnColourx <- list(
+  Organ = metaR_organ,
+  Bat = metaR_bat)
+
+# Check the output
+metaR_AnnColour
+
+SampleOrder = order(df$organ, df$bat)
+meta.factors <- df[1:2]
+
+df[1:2]
+
+png(paste0(path, 'results/salmon/results/02-DE/HeatMap_topvar100.png'), width = 4000, height = 8000, res = 300)
+colsHeat<- c("#F7F7F7", "#92C5DE", "#0571B0", "#F4A582", "#CA0020")
+pheatmap2 <- pheatmap(assay(rld)[topVarGenes, SampleOrder],
+         cluster_cols = FALSE,
+         cluster_rows = TRUE,
+         gaps_row = 5, 
+         clustering_distance_rows = "euclidean",
+         clustering_distance_cols  = "euclidean",
+         annotation_colors = metaR_AnnColourx, annotation_col = meta.factors,  
+         show_colnames = TRUE,
+         #color = colorRampPalette( rev(brewer.pal(9, "RdBu")) )(255),
+         color = colorRampPalette(c(colsHeat))(255),
+         border_color = "#f8edeb",
+         display_numbers = FALSE)
+pheatmap2
+dev.off()
+dev.off()
+
+#heatmap.2( assay(rld)[ topVarGenes, ], scale="row", trace="none", dendrogram="column", col = colorRampPalette( rev(brewer.pal(9, "RdBu")) )(255))
+
+
+png(paste0(path, 'results/salmon/results/02-DE/HeatMap_topvar100_clus.png'), width = 5000, height = 8000, res = 300)
+pheatmap3 <- pheatmap(assay(rld)[topVarGenes, SampleOrder],
+         cluster_cols = TRUE,
+         cluster_rows = TRUE,
+         gaps_row = 5, 
+        scale="row",
+         clustering_distance_rows = "euclidean",
+         clustering_distance_cols  = "euclidean",
+         annotation_colors = metaR_AnnColourx, annotation_col = meta.factors,  
+         show_colnames = TRUE,
+         #color = colorRampPalette( rev(brewer.pal(9, "RdBu")) )(255),
+         color = colorRampPalette(c(colsHeat))(255),
+         border_color = "#f8edeb",
+         display_numbers = FALSE)
+pheatmap3
+dev.off()
+
+mat  <- assay(rld)[ topVarGenes, ]
+#
+# topVarGenes <- order(-rowVars(assay(rld)))[0:100]
+# mat <- assay(rld)[ topVarGenes, ]
+# mat<- mat - rowMeans(mat)
+# 
+# 
+# mat <- assay(rld)[ topVarGenes, ]
+# mat <- mat - rowMeans(mat)
+# 
+# pheatmap(mat)
+# 
+# rowVars(assay(dds))
+# apply(x, 1, var)
+# 
+# matrixStats
+# 
+# 
+# 
+#mat <- assay(vsd)
+# zscores <- t(scale(t(mat)))
+# hist(zscores[ ,5 ]) # where idx is the number of the sample
+# gene.idx <- which(zscores[,5] > 1) # where x is a large value
+# plotCounts(dds, gene.idx[1])
+```
+
+## Sample-to-sample correlation 
+```{r sample-to-sample-correlation, eval = F, echo = T}
+rld2 <- rlog(dds, blind=F )
+sampleDists2 <- dist(t(assay(rld2)))
+sampleDistMatrix2 <- as.matrix(sampleDists2)
+rownames(sampleDistMatrix2) <- paste( rld2$sample_id, rld2$organ, rld2$bat , sep="-" )
+
+cor <- cor((assay(vsd)))
+rownames(cor) <- rownames(sampleDistMatrix2)
+#rownames(sampleDists2) <- vsd$sample_name
+
+
+#blue_c <- generate_palette("blue", modification = "go_darker", n_colors = 255, view_palette = FALSE, view_labels = FALSE)
+#colors <- colorRampPalette(rev(brewer.pal(9, 'Blues')))(255)
+
+colors <- colorRampPalette(brewer.pal(9, 'Blues'))(255)
+png(paste0(path, 'results/salmon/results/02-DE/samples_correlation.png'), width =3000, height = 2500, res = 300)
+correlation <- pheatmap(cor, clustering_distance_rows = 'correlation', clustering_distance_cols = 'correlation', color = colors)
+correlation
+dev.off()
+```
+
+
+
+```{r, eval  = F, echo = F}
+#mat  <- assay(rld)[ topVarGenes, ]
+df_mat <- as.data.frame(mat)
+colnames(df_mat)$gene_id <- colnames(df_mat)
+
+gene_ids <- rownames(df_mat)
+df_mat$gene_id <- gene_ids
+
+dds2 <- estimateSizeFactors(dds)
+sizeFactors(dds2)
+counts <- counts(dds2, normalized = T)
+
+counts <- reshape2::melt(counts, varnames = c('gene_id', 'sample_name'), value.name = 'expression')
+
+counts_differexp <- inner_join(counts, df_mat[c('gene_id')], by  ='gene_id')
+counts_differexp <- inner_join(counts_differexp, samples_info, 'sample_name') #L1_P25558_101_S30
+ggplot(counts_differexp, aes(x = bat, y = log2(expression), fill = factor(organ))) + geom_violin()
+```
+
+```{r cut-off2, eval = F, echo = F}
+
+ddsColl <- collapseReplicates(dds, dds$sample_name, dds$library)
+
+colData(ddsColl)
+colnames(ddsColl)
+
+matchFirstLevel <- dds$sample_name == levels(dds$sample_name)[1]
+stopifnot(all(rowSums(counts(dds[,matchFirstLevel])) == counts(ddsColl[,1])))
+
+```
+
+
+
+```{r cut-off, eval = T, echo = T}
+# ## Differential expression  
+# We use cut-off for adjusted p-value (0.05) and log2 fold change (|log2FoldChange| >= 1).  
+# log2FC_cutoff <- 1
+# padjust_cutoff <- 0.05
+``` 
+
+## Distribution of expression  
+```{r dist-norm-expression2, eval = F, echo = T}
+counts_norm <- reshape2::melt(counts(dds2, normalized = T), varnames = c('gene_id', 'sample_name'), value.name = 'counts')
+counts_norm <- inner_join(x = counts_norm, y = as.data.frame(dds2@colData), by = 'sample_name')
+#colnames(counts_norm)[3] <- "counts"
+
+
+png(paste0(path, 'results/salmon/results/02-DE/distribution.png'), width = 3000, height = 2500, res = 300)
+ggplot(data = counts_norm, aes(x = reorder(sample_name, bat, na.rm = T), y = log2(counts+1))) +  geom_boxplot(aes(fill = factor(counts_norm$organ))) + coord_flip() + xlab('sample_name')
+dev.off()
+```
+
+# Results  
+## Filtering
+We filter out low-count genes before downstream analysis by using at least 20 reads in total (including all samples) by which we removed 6160 genes and kept 22733 genes for downstream analysis. 
+
+## Sample correlation  
+
+There is no logical correlation among samples as shown in figure \@ref(fig:fig-sample-correlation)).  You can see that different organs are clustered together, summer and winter are also together. Library seems not to be the main factor here as well.
+ 
+
+```{r fig-sample-correlation, echo = F, eval = T}
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/02-DE/samples_correlation.png')
+```
+
+**Heatmap of Euclidean sample distances after rlog transformation**
+
+```{r fig-sample-log, echo = F, eval = T}
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/02-DE/HeatMap_rlog.png')
+```
+
+## PCA  
+
+In figures  \@ref(fig:fig-PCA-sex) and  \@ref(fig:fig-PCA-day) each point corresponds to a sample plotted on PC1 and PC2.  I can't see strong separation by **organ or bat (s/w)**.  **Library** batch effect has been removed.  
+
+```{r fig-PCA-organ, echo = F, eval = T }
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/02-DE/PCA_bat_lremoved.png')
+```
+
+```{r fig-PCA-library, echo = F, eval = T }
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/02-DE/PCA_library_removed.png')
+```
+
+## Highly variable genes  
+### All Samples  
+#### These are the genes (top 100) most variable across all samples regardless of which samples they are.
+
+**TopVar genes results. Table below shows list of 100 genes**
+
+```{r fig-topVarGenes, echo = F, eval = T }
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/02-DE/HeatMap_topvar100.png')
+```
+
+
+**TopVar Clustered independent of the sample**
+
+
+```{r fig-topVarGenes-cluster, echo = F, eval = T }
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/02-DE/HeatMap_topvar100_clus.png')
+```
+
+
+## Annotation 
+
+**Table with the information of the top 100 genes**
+
+Table with all genes can be found at the Github.
+
+
+```{r tbl, eval = T, echo = F, message=FALSE}
+tbl_top <- read.table("/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/01-T/TopVar100.tsv", header=T, row.names=1, check.names=T, sep="\t")
+
+DT::datatable(data = tbl_top, rownames = TRUE, 
+              extensions = c('Buttons', 'Scroller'), 
+              options = list(dom = 'Bfrtip', buttons = c('copy', 'csv'),
+                             deferRender = TRUE, scrollX = T,
+                             scrollY = 200,
+                             scroller = TRUE,
+                             caption = paste0('TopVar  genes in', tbl_top)))
+
+```
+## GO analysis
+
+Here, you can find the the GO profile of the topVar 100 genes
+
+
+```{r fig-topVarGenes-GO, echo = F, eval = T }
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/salmon/results/01-T/gProfiler_m.png')
+```
+
+**Dinamic Link**
+
+[GO Terms](https://biit.cs.ut.ee/gplink/l/T_bDIpXTTR) 
+
+
+
+# Further Work  - Limitations
+
+We can't go further due to the limitation in the experimental design
+
+# References
+
+* Experimental design [here](https://bmcgenomics.biomedcentral.com/articles/10.1186/1471-2164-13-484) 
+
+
+# Deliverables  
+
+Files delivered to the user with descriptions.
+
+```{r,echo=TRUE,eval=FALSE}
+rmarkdown::render("report.Rmd")
+```
+
+
+# Reproducibility  
+```{r reproducbility, eval = T, echo = F}
+sessionInfo()
+```
+
+# Practical Info  
+
+## Data responsibility
+
+The responsibility for data archiving lies with the PI of the project. We do not offer long-term storage or retrieval of data.
+
++ __NBIS & Uppnex: __ We kindly ask that you remove the files from UPPMAX/UPPNEX. The main storage at UPPNEX is optimized for high-speed and parallel access, which makes it expensive and not the right place for longer time archiving. Please consider others by not taking up the expensive space. Please note that UPPMAX is a resource separate from the Bioinformatics Platform, administered by the Swedish National Infrastructure for Computing (SNIC) and SNIC-specifc project rules apply to all projects hosted at UPPMAX.   
++ __Sensitive data :__ Please note that special considerations may apply to the human-derived legally considered sensitive personal data. These should be handled according to specific laws and regulations as outlined e.g. [here](http://nbis.se/support/human-data.html).  
++ __Long-term backup :__ We recommend asking your local IT for support with long-term data archiving. Also a newly established [Data Office](https://www.scilifelab.se/data/) at SciLifeLab may be of help to discuss other options.  
+
+## Acknowledgments
+
+If you are presenting the results in a paper, at a workshop or conference, we kindly ask you to acknowledge us.
+
+> "Support by NBIS (National Bioinformatics Infrastructure Sweden) is gratefully acknowledged."
+
++ __UPPMAX__ kindly asks you to [acknowledge UPPMAX and SNIC](https://www.uppmax.uu.se/support/faq/general-miscellaneous-faq/acknowledging-uppmax--snic--and-uppnex/). If applicable, please add:
+
+> "The computations were performed on resources provided by SNIC through Uppsala Multidisciplinary Center for Advanced Computational Science (UPPMAX) under Project SNIC 2022-22-352."
+
++ __NGI :__ For publications based on data from NGI Sweden, NGI, SciLifeLab and UPPMAX should be [acknowledged](https://ngisweden.scilifelab.se/info/faq#how-do-i-acknowledge-ngi-in-my-publication) like so:  
+
+> "The authors would like to acknowledge support from Science for Life Laboratory (SciLifeLab), the National Genomics Infrastructure (NGI), and Uppsala Multidisciplinary Center for Advanced Computational Science (UPPMAX) for providing assistance in massive parallel sequencing and computational infrastructure."
+
+# Support Completion  
+
+You should soon be contacted by one of our managers with a request to close down the project in our internal system and for invoicing matters. If we do not hear from you within 30 days the project will be automatically closed and invoice sent. Again, we would like to remind you about data responsibility and acknowledgements, see sections: **Data Responsibility** and **Acknowledgments**.
+
+You are welcome to come back to us with further data analysis request at any time via http://nbis.se/support/support.html.
+
+Thank you for using NBIS.
+
+
+
+<!-- --------------------- Do not edit this and below ---------------------- -->
+
+</br>
+
+```{r,child="assets/_footer-lab.Rmd"}
+```
+
+```{r,eval=FALSE,echo=FALSE}
+# manually run this to render this document to HTML
+rmarkdown::render("nbis-report.Rmd")
+# then run this to convert HTML to PDF (if needed)
+#pagedown::chrome_print("nbis-report.html",output="nbis-report.pdf")
+```

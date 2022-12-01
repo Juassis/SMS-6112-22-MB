@@ -1,0 +1,13 @@
+sample_id	bat	organ	library
+L1_101	Bat_1 	Skeletal muscle	L1
+L1_102	Bat_1 	Kidney	L1
+L1_103	Bat_1 	Intestine	L1
+L1_104	Bat_2 	Skeletal muscle	L1
+L1_106	Bat_2 	Intestine	L1
+L2_101	Bat_1 	Skeletal muscle	L2
+L2_102	Bat_1 	Kidney	L2
+L2_104	Bat_2 	Skeletal muscle	L2
+L2_105	Bat_2 	Kidney	L2
+L2_106	Bat_2 	Intestine	L2
+L3_103_S130	Bat	Intestine	L3
+L3_103_S51	Bat	Intestine	L3
