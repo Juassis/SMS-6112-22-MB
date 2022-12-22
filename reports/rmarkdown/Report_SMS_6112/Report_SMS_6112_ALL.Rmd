@@ -724,15 +724,19 @@ dev.off()
 topVarGenes1000 <- head(order(rowVars(assay(rld)), decreasing=TRUE ), 1000)
 mat  <- assay(vsd)[ topVarGenes1000, ]
 mat  <- mat - rowMeans(mat)
-#anno <- as.data.frame(colData(vsd)[, c("bat","organ")])
-#pheatmap(mat, annotation_col = anno)
-write.table(mat,file='/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/ALL_Libraries/results/01_DE/topVarGenes1000_L1_2_3.tsv',quote=FALSE,sep="\t")
+anno <- as.data.frame(colData(vsd)[, c("bat","organ")])
 
+png(paste0(path, '/results/ALL_Libraries/results/01_DE/HeatMap_topvar1000_clus_L1.png'), width = 5000, height = 30500, res = 300)
+
+h_1000 <- pheatmap(mat, annotation_col = anno)
+#write.table(mat,file='/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/ALL_Libraries/results/01_DE/topVarGenes1000_L1_2_3.tsv',quote=FALSE,sep="\t")
+dev.off()
 ##
 
 png(paste0(path, '/results/ALL_Libraries/results/01_DE/HeatMap_topvar100_clus_1_L2_3.png'), width = 5000, height = 8000, res = 300)
 
 #png(paste0(path, '/results/ALL_Libraries/results/01_DEHeatMap_topvar500_clus_L1.png'), width = 5000, height = 15500, res = 300)
+
 pheatmap3 <- pheatmap(assay(rld)[topVarGenes, SampleOrder],
          cluster_cols = TRUE,
          cluster_rows = TRUE,
@@ -787,6 +791,60 @@ distribution
 dev.off()
 ```
 
+
+```{r volcano_intestine, eval = F, echo = T}
+
+dds3 <- DESeqDataSetFromMatrix(countData = round(counts),
+                              colData = samples_info,
+                              design = ~ 0 + organ_bat)
+dds3 <- DESeq(dds3)
+resultsNames(dds3)
+#[1] "organ_batIntestine_Bat_1"       "organ_batIntestine_Bat_2"       "organ_batKidney_Bat_1"         
+#[4] "organ_batKidney_Bat_2"          "organ_batSkeletal.muscle_Bat_1" "organ_batSkeletal.muscle_Bat_2"
+
+
+log2FC_cutoff <- 1
+padjust_cutoff <- 0.05
+
+#Intestine Bat
+contrast_name <- list(c('organ_batIntestine_Bat_1', 'organ_batIntestine_Bat_2'))
+
+#res_results <- perform_DE(dds = dds3, contrast_name = contrast_name, log2FC_cutoff = log2FC_cutoff, padjust_cutoff = padjust_cutoff, file_name = intestine, volcano = T, genes = rownames(dds3))
+
+res_obj <- results(dds3, tidy=TRUE, contrast = contrast_name, lfcThreshold = log2FC_cutoff, alpha = padjust_cutoff)
+res <- res_obj
+colnames(res)[1] <- "gene_id"
+
+res <- res[!is.na(res$padj),]
+res$diffexpressed <- 'No' 
+res$diffexpressed[(res$log2FoldChange >= log2FC_cutoff & res$padj <= 0.05)] <- 'Up-regulated'
+res$diffexpressed[(res$log2FoldChange <= -log2FC_cutoff & res$padj <= 0.05)] <- 'Down-regulated'
+res$delabel <- 'NA'
+res[(res$diffexpressed != 'No'), 'delabel'] <- res[(res$diffexpressed != 'No'),'gene_name']
+
+##
+png(paste0(path, '/results/ALL_Libraries/results/01_DE/intestine_volcano_L1_2_3.png'), width = 3000, height = 2500, res = 300)
+
+par(mar=c(5,5,5,5), cex=1.0, cex.main=1.4, cex.axis=1.4, cex.lab=1.4)
+
+topT <- as.data.frame(res)
+
+#Adjusted P values (FDR Q values)
+with(topT, plot(log2FoldChange, -log10(padj), pch=20, main="Volcano plot", cex=1.0, xlab=bquote(~Log[2]~fold~change), ylab=bquote(~-log[10]~Q~value)))
+
+with(subset(topT, padj<0.01 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(padj), pch=20, col="red", cex=0.5))
+
+#with(subset(topT, padj<0.05 & abs(log2FoldChange)>2), text(log2FoldChange, -log10(padj), labels=subset(rownames(topT), topT$padj<0.05 & abs(topT$log2FoldChange)>2), cex=0.8, pos=3))
+
+#Add lines for absolute FC>2 and P-value cut-off at FDR Q<0.05
+abline(v=0, col="black", lty=3, lwd=1.0)
+abline(v=-2, col="black", lty=4, lwd=2.0)
+abline(v=2, col="black", lty=4, lwd=2.0)
+abline(h=-log10(max(topT$pvalue[topT$padj<0.01], na.rm=TRUE)), col="black", lty=4, lwd=2.0)
+dev.off()
+```
+
+
 # Results  
 ## Filtering
 We filter out low-count genes before downstream analysis by using at least 20 reads in total (including all samples) by which we removed 5932 genes and kept 23060 genes for downstream analysis. 
@@ -818,8 +876,11 @@ knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/
 
 ## Highly variable genes  
 ### All Samples  
-#### These are the genes (top 100) most variable across all samples regardless of which samples they are.
 
+These are the genes (top 100) most variable across all samples regardless of which samples they are.
+
+
+#### TopVar 100 genes
 **TopVar genes results. Table below shows list of 100 genes**
 
 ```{r fig-topVarGenes, echo = F, eval = T }
@@ -832,6 +893,15 @@ knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/
 
 ```{r fig-topVarGenes-cluster, echo = F, eval = T }
 knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/ALL_Libraries/results/01_DE/HeatMap_topvar100_clus_L1_2_3.png')
+```
+
+#### TopVar 1000 genes
+
+**TopVar 1000 Clustered independent of the sample**
+
+
+```{r fig-topVarGenes-cluster-1000, echo = F, eval = T }
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/ALL_Libraries/results/01_DE/HeatMap_topvar1000_clus_L1.png')
 ```
 
 
@@ -871,6 +941,13 @@ knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/
 **Dinamic Link**
 
 [GO Terms](https://biit.cs.ut.ee/gplink/l/Ff9bRzi4TG) 
+
+
+### DEseq Intestine
+
+```{r fig-intestine_volcano, echo = F, eval = T }
+knitr::include_graphics('/Users/juliana/Documents/GitHub/SMS-6112-22-MB/results/ALL_Libraries/results/01_DE/intestine_volcano_L1_2_3.png')
+```
 
 
 
